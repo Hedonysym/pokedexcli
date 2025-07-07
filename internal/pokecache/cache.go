@@ -37,22 +37,22 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	entry, exists := c.cache[key]
-	if !exists {
-		return nil, false
-	}
-	return entry.val, true
+	return entry.val, exists
 }
 
 func (c *Cache) reapLoop(interval time.Duration) {
 	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
 	for range ticker.C {
-		c.mutex.Lock()
-		for key, entry := range c.cache {
-			if time.Since(entry.createdAt) > interval {
-				delete(c.cache, key)
-			}
+		c.reap(time.Now().UTC(), interval)
+	}
+}
+
+func (c *Cache) reap(now time.Time, last time.Duration) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	for k, v := range c.cache {
+		if v.createdAt.Before(now.Add(-last)) {
+			delete(c.cache, k)
 		}
-		c.mutex.Unlock()
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	pokecache "github.com/Hedonysym/pokedexcli/internal/pokecache"
+	"github.com/Hedonysym/pokedexcli/internal/pokeapi"
 )
 
 func cleanInput(text string) []string {
@@ -14,10 +14,10 @@ func cleanInput(text string) []string {
 }
 
 func main() {
-	cache := pokecache.NewCache(5 * 1000)
+	client := pokeapi.NewClient(5 * 1000)
 	config := &Config{
 		prevUrl: "",
-		nextUrl: "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20",
+		nextUrl: "",
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
@@ -35,7 +35,7 @@ func main() {
 		if cmd, exists := commandRegistry[input[0]]; !exists {
 			fmt.Print("Unknown command\n")
 		} else {
-			if err := cmd.callback(config, cache); err != nil {
+			if err := cmd.callback(input[1:], config, client); err != nil {
 				fmt.Fprintln(os.Stderr, "Error executing command:", err)
 			}
 		}
